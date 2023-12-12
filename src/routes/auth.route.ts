@@ -3,7 +3,23 @@ import Users from '../db/models/Users'
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcrypt";
 import { Op } from 'sequelize';
+import Otp from '../db/models/Otp';
+import nodemailer from 'nodemailer';
 var axios = require('axios');
+
+//   nodemaler cradationsls evi
+//ok
+let transporter = nodemailer.createTransport({
+    service:"gmail",
+    auth: {
+        user:"sathish.d@techallylabs.com" ,
+        pass: "xfjj smyg ahvv hzoj"
+    },
+    tls:{
+        rejectUnauthorized:false 
+    }
+})
+
 
 
 const authRoute = Router()
@@ -40,14 +56,14 @@ authRoute.post('/signup', async (req: Request, res: Response) => {
         //add new user and return 201
         const salt = await bcrypt.genSalt(10);
 
-        const userCredential: any = {
+        const userCredential : any = {
             user_name: user_name,
             email: email,
             phone_number: phone_number,
             password_hashed: await bcrypt.hash(password, salt),
             user_type: 3
         }
-        const createUser = await Users.create(userCredential)
+        const createUser:any = await Users.create(userCredential)
         return res.status(200).send({ message: "User successfully created" })
 
     } catch (error: any) {
@@ -188,4 +204,130 @@ authRoute.post('/login', async (req: Request, res: Response) => {
 //         return res.send({ message: 'error in login with otp' + error });
 //     }
 // })
+
+
+
+
+
+
+authRoute.post("/login-social", async (req:Request,res: Response) => {
+    try {
+
+        const chekUser:any = await Users.findOne({where:{email:req.body.email}})
+
+        
+        if (chekUser) {
+            let token = ""
+            if (chekUser?.user_type == 1) {
+            
+             token =  jwt.sign(
+                { id:chekUser?.id, username: chekUser.user_name, email: chekUser.email,role:chekUser?.user_type },
+
+                "SECRET_ACCESS_KEY",
+                { expiresIn: "1h" }
+            );
+        }else {
+            token =  jwt.sign(
+                { id:chekUser?.id, username: chekUser.user_name, email: chekUser.email },
+                "SECRET_ACCESS_KEY",
+                { expiresIn: "1h" }
+            );
+        }
+
+        res.send({message:'success',token:token})
+        }
+        else {
+            res.send({message:"user not found"})
+        }
+
+         
+
+    }
+    catch (err:any) {
+        res.send({message:err.message})
+    }
+})
+
+
+// send otp in mail 
+
+authRoute.post("/forgot_password", async (req:Request, res:Response) =>{
+    try {
+           const body = req.body
+           const checkEmail = await Users.findOne({where: {email:body.email}})
+           if (!checkEmail){
+               return res.status(403).send({message: "Kindly Enter email address"})
+           }
+           let otp = Math.floor(10000 + Math.random() * 900000);
+       const newObject:any = {
+            email : checkEmail.email,
+            otp : otp,
+      }
+      const tokenResponse = await Otp.create(newObject)
+   //code chupinchuu aka
+   
+      let mailOptions = {
+        // user:"sathish.d@techallylabs.com" ,
+        // pass: "xfjj smyg ahvv hzoj"
+       from : "sathish.d@techallylabs.com",
+       to: checkEmail.email,
+       subject: 'Otp For Forgot Password ',
+       text: tokenResponse.otp.toString()
+   }
+   
+   transporter.sendMail(mailOptions,function(err:any,success:any) {
+       if (err) {
+           res.send(err)
+       }
+       else {
+           res.send({message:'email sent'})
+       }
+   })   
+   } catch (error) {
+           res.send({message: "error in getting otp"})
+       }
+   
+   })
+
+
+   authRoute.post('/verify', async (req:Request,res:Response) => {
+    try {
+
+        const response = await Otp.findAll({where:{otp:req.body.otp},order:[['id','DESC']]})
+
+        const otp = response[0].otp
+
+        if (otp == req.body.otp) {
+            res.send('success')
+        } else {
+            res.send('error')
+        }
+    }
+    catch(err:any) {
+        res.send({message:err.message})
+    }
+})
+
+authRoute.get('/otpdetails/:otp', async (req:Request, res:Response) => {
+    try{
+const optparams = parseInt(req.params.otp)
+const otp = await Otp.findOne({where:{otp:optparams}})
+res.status(200).send(otp?.email)
+    }catch(err) {
+        res.status(404).send(`error:- ${err}`)
+    }
+})
+
+authRoute.patch("/changepassword", async (req:Request, res:Response) => {
+    try {
+        const passwordChange = await Users.update(req.body,{where:{email:req.body.email}})
+        res.status(200).send({message:'Successfully Updated Password', data:passwordChange})
+        
+    } catch (error) {
+        res.status(401).send({message : "Error Will Updating Password" , error: error})
+    }
+})
+
+
+
 export default authRoute;

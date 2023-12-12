@@ -1,5 +1,8 @@
 import React,{useEffect, useState} from 'react'
 import { useNavigate  } from 'react-router-dom'
+const handleOpen = () => setOpen(true);
+
+import Edit from "./todomain";
 
 import Cookies from 'js-cookie';
 
@@ -9,7 +12,7 @@ const Todo = () =>{
     const [newItem, setNewItem] = useState("");
     const [age, setNewAge] = useState("");
 
-    const [items, setItes] = useState([] as any);
+    const [items, setItems] = useState([] as any);
     const [temporyVal, setTemporyVal] = useState({} as any)
     const [open,setOpen] = useState(true)
   
@@ -27,7 +30,7 @@ const Todo = () =>{
         value: newItem,
         age:age
       };
-      setItes([...items, item ]); 
+      setItems([...items, item ]); 
 
       setNewItem("");
       setNewAge("");
@@ -35,7 +38,7 @@ const Todo = () =>{
      console.log(items);
     function deleteItem(id:any) {
       const newArry = items.filter((item:any) => item.id !== id);
-      setItes(newArry);
+      setItems(newArry);
     }
     const navigate = useNavigate();
 
@@ -57,9 +60,11 @@ const Todo = () =>{
     setTemporyVal(filter[0])
 
     setOpen(false)
+    setOpen(false)
   }
   const updata = () =>{
     const findIndex = items.findIndex((x:any)=>x.id === temporyVal.id)
+    console.log(findIndex)
     items[findIndex].value =newItem
     items[findIndex].age =age
     
@@ -71,8 +76,8 @@ const Todo = () =>{
         value : x?.id == findIndex?.id ?  findIndex?.value  : x?.value,
         age : x?.id == findIndex?.id ? findIndex?.age : x?.age
     }) )
-
-    setItes(modData)
+ 
+    setItems(modData)
 
     setOpen(true)
     setNewItem("");
@@ -98,14 +103,16 @@ const Todo = () =>{
 {open?
       <button onClick={addItem}>Add</button> :
       <button onClick={updata}>updata</button>
+      
 }
-        {items.map((item:any) => (
-          <table key={item.id}>
-            
-  <tr>
+<tr>
     <th>name</th>
     <th>age</th>
   </tr>
+{items.map((item:any) => (
+          <table key={item.id}>
+            
+  
   <tr>
     <td> {item.value}</td>
     <td>{item.age}</td>
@@ -121,8 +128,16 @@ const Todo = () =>{
 </table>
             
         ))}
+    <div>
+      <Edit value={items} deleteButton = {deleteItem} editFunc={edit} />
+    </div>
+
     </div>
   );
 }
 
 export default Todo
+
+function setOpen(arg0: boolean) {
+  throw new Error('Function not implemented.');
+}

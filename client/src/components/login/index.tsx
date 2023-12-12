@@ -84,6 +84,8 @@ const Login = () => {
             <input type="text" placeholder="enter email" onChange={onChangeEmail}/>
             password:
             <input type="password" placeholder="enter password" onChange={onChangepassword}/>
+            <a className="text-black text-decoration-none " href={`/forgotpassword`}> Frogot Password?</a>
+
             <button onClick={loginsubmit}>submit</button>
             
             </div>
